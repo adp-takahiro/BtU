@@ -2,6 +2,7 @@
   "name": "LIKE_PAGE_LIST",
   "short_name": "LikeList",
   "description": "URLをブックマーク化するアプリ",
+  "id": "/BtU/",
   "start_url": "/BtU/",
   "scope": "/BtU/",
   "display": "standalone",
@@ -18,6 +19,14 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
   ]
 }
