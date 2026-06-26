@@ -1,10 +1,10 @@
 const CACHE_NAME = 'like-page-list-v1';
 const ASSETS = [
-  '/like-page-list/',
-  '/like-page-list/index.html',
-  '/like-page-list/manifest.json',
-  '/like-page-list/icon-192.png',
-  '/like-page-list/icon-512.png',
+  '/BtU/',
+  '/BtU/index.html',
+  '/BtU/manifest.json',
+  '/BtU/icon-192.png',
+  '/BtU/icon-512.png',
 ];
 
 // インストール時にキャッシュ
