@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a1a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>LIKE_PAGE_LIST</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #1a1a1a;
+  --sidebar:  #141414;
+  --card:     #000000;
+  --card-h:   #2a2a2a;
+  --border:   #2e2e2e;
+  --border-h: #3a3a3a;
+  --text-1:   #f0f0f0;
+  --text-2:   #888;
+  --text-3:   #1a1a1a;
+  --text-4:   #555;
+  --thumb-bg: #efefef;
+  --input-bg: #a5a5a5;
+  --accent:   #e8e8e8;
+  --tag-bg:   #2e2e2e;
+  --tag-active: #e8e8e8;
+  --tag-active-text: #111;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text-1); font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', 'Segoe UI', sans-serif; }
+.app { display: flex; height: 100vh; overflow: hidden; flex-direction: column; }
+.header { flex-shrink: 0; background: var(--sidebar); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; height: 48px; gap: 16px; }
+.header-logo { font-size: 14px; font-weight: 700; color: var(--text-1); letter-spacing: -0.02em; white-space: nowrap; }
+.header-sub { font-size: 11px; color: var(--text-4); white-space: nowrap; }
+.header-spacer { flex: 1; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 14px 24px 7px; flex-shrink: 0; }
+.url-input { flex: 1; height: 40px; padding: 0 14px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-3); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+.url-input::placeholder { color: #666; }
+.url-input:focus { border-color: var(--border-h); }
+.url-input.err { border-color: #884; animation: shake .3s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+.add-btn { height: 40px; padding: 0 18px; background: var(--accent); border: none; border-radius: 8px; color: #111; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; flex-shrink: 0; transition: opacity 0.12s; display: none;}
+.add-btn:hover { opacity: 0.85; }
+.add-btn:active { opacity: 0.7; }
+.count-badge { font-size: 12px; color: var(--text-4); flex-shrink: 0; min-width: 40px; text-align: right; display:none;}
+
+.nav-btn { background: none; border: 1px solid var(--border-h); color: white; font-size: 11px; padding: 4px 8px; border-radius: 5px; cursor: pointer; transition: all 0.1s; background-color:#0098bf;}
+.nav-btn:hover { color: var(--text-1); border-color: var(--text-2); }
+
+.tag-bar { display: flex; align-items: center; gap: 8px; padding: 7px 24px 14px; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+.tag-bar::-webkit-scrollbar { height: 0px; background: transparent; }
+.filter-tag-btn { padding: 4px 12px; font-size: 12px; border-radius: 20px; background: var(--tag-bg); color: var(--text-2); border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.filter-tag-btn:hover { border-color: var(--border-h); color: var(--text-1); }
+.filter-tag-btn.active { background: var(--tag-active); color: var(--tag-active-text); font-weight: 600; }
+
+.content { flex: 1; overflow-y: auto; padding: 24px 24px 60px; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--text-4); user-select: none; }
+.empty-icon { font-size: 36px; opacity: 0.25; }
+.empty-label { font-size: 14px; }
+.empty-hint { font-size: 12px; opacity: 0.5; }
+.card-grid { display: flex; flex-direction: column; gap: 12px; max-width: 900px; margin: 0 auto; width: 100%; }
+.card { display: flex; align-items: stretch; background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 130px; position: relative; cursor: pointer; transition: background 0.1s, border-color 0.1s; }
+.card:hover { background: var(--card-h); border-color: var(--border-h); }
+.card:hover .card-action-btn { opacity: 1; }
+.card-body { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-right: 45px; }
+.card-title { font-size: 14px; font-weight: 700; color: var(--text-1); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-desc { font-size: 12px; color: var(--text-2); line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.card-tag-item { font-size: 10px; padding: 2px 8px; background: rgba(250,250,250,0.06); border: 1px solid var(--border); border-radius: 4px; color: var(--text-2); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.card-url-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.card-favicon { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; padding: 1.5px; background-color: white;}
+.card-url-text { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-thumb-wrap { width: 180px; flex-shrink: 0; padding: 14px 14px 14px 0; display: flex; }
+.card-thumb { flex: 1; background: var(--thumb-bg); border-radius: 7px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 90px; }
+.card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* アクションボタン（PC用：ホバーしていない時は非表示） */
+.card-action-btn { position: absolute; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: #aaa; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s, background 0.1s; z-index: 2; }
+.card-del { top: 10px; }
+.card-edit { top: 42px; }
+.card-del:hover { background: rgba(180,40,40,0.85); color: #fff; }
+.card-edit:hover { background: rgba(40,120,180,0.85); color: #fff; }
+
+.card-loading, .card-error { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-4); max-width: 900px; margin: 0 auto; width: 100%; }
+.card-error { color: #b06060; }
+.spinner { width: 15px; height: 15px; border: 2px solid var(--border-h); border-top-color: #aaa; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 📱 スマホ・タブレット用（画面サイズが小さい時）の調整 */
+@media (max-width: 580px) {
+  .header-sub { display: none; }
+  .card { flex-direction: column; }
+  .card-thumb-wrap { padding: 0 14px 14px; width: auto; max-height: 250px; }
+  .topbar { padding: 12px 14px 4px; }
+  .content { padding: 14px 14px 60px; }
+  
+  /* 🛠️ スマホではボタンを常に表示(opacity: 1)にする */
+  .card .card-action-btn { opacity: 1; background: rgba(0,0,0,0.75); width: 32px; height: 32px; font-size: 14px; }
+  .card-del { top: 10px; right: 10px; }
+  .card-edit { top: 10px; right: 50px; } /* スマホ時は右上に2つ綺麗に並ぶよう位置を調整 */
+  .card-body { padding-right: 95px; }    /* ボタンとタイトルが被らないように余白を広げる */
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, collection, setDoc, deleteDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAh02dU50wou_idDi7caaL9OCQ42-SCAvk",
+  authDomain: "like-url-list.firebaseapp.com",
+  projectId: "like-url-list",
+  storageBucket: "like-url-list.firebasestorage.app",
+  messagingSenderId: "121482219485",
+  appId: "1:121482219485:web:387e7cdbcc729d76d4b034"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider("6LfqgzUtAAAAAD_DiTJMuZU9jzpNMJPau8Me0YH7"),
+  isTokenAutoRefreshEnabled: true
+});
+
+let cards = [];
+let currentFilterTag = "すべて";
+let currentUser = null;
+
+const $ = id => document.getElementById(id);
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getFavicon(url) {
+  try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`; }
+  catch { return ''; }
+}
+
+// ☁️ Firebase クラウド保存・削除処理
+async function saveCardToCloud(c) {
+  if (!currentUser) return;
+  try {
+    const docRef = doc(db, "users", currentUser.uid, "bookmarks", c.id);
+    await setDoc(docRef, c);
+  } catch (e) { console.error("Cloud save error:", e); }
+}
+
+async function deleteCardFromCloud(id) {
+  if (!currentUser) return;
+  try {
+    const docRef = doc(db, "users", currentUser.uid, "bookmarks", id);
+    await deleteDoc(docRef);
+  } catch (e) { console.error("Cloud delete error:", e); }
+}
+
+function syncUI() {
+  const n = cards.length;
+  const visibleCards = currentFilterTag === "すべて" ? cards : cards.filter(c => c.tags && c.tags.includes(currentFilterTag));
+  const hasItems = n > 0 || !!$('cardGrid').querySelector('.card-loading,.card-error');
+  
+  $('countBadge').textContent = currentFilterTag === "すべて" ? `${n} 件` : `${visibleCards.length} / ${n} 件`;
+  $('emptyState').style.display = hasItems ? 'none' : 'flex';
+  $('cardGrid').style.display = hasItems ? 'flex' : 'none';
+  
+  renderTagBar();
+}
+
+function renderTagBar() {
+  const allTags = new Set();
+  cards.forEach(c => {
+    if (c.tags && Array.isArray(c.tags)) {
+      c.tags.forEach(t => { if(t.trim()) allTags.add(t.trim()); });
+    }
+  });
+
+  const tagBar = $('tagBar');
+  tagBar.innerHTML = '';
+
+  if (!currentUser || cards.length === 0) {
+    tagBar.style.display = 'none';
+    return;
+  }
+  tagBar.style.display = 'flex';
+
+  const allBtn = document.createElement('button');
+  allBtn.className = `filter-tag-btn ${currentFilterTag === 'すべて' ? 'active' : ''}`;
+  allBtn.textContent = `すべて (${cards.length})`;
+  allBtn.addEventListener('click', () => {
+    currentFilterTag = 'すべて';
+    renderAll();
+  });
+  tagBar.appendChild(allBtn);
+
+  allTags.forEach(tag => {
+    const count = cards.filter(c => c.tags && c.tags.includes(tag)).length;
+    const btn = document.createElement('button');
+    btn.className = `filter-tag-btn ${currentFilterTag === tag ? 'active' : ''}`;
+    btn.textContent = `${tag} (${count})`;
+    btn.addEventListener('click', () => {
+      currentFilterTag = tag;
+      renderAll();
+    });
+    tagBar.appendChild(btn);
+  });
+}
+
+// ── OGP取得 ──
+async function fetchViaMicrolink(url) {
+  const res = await fetch(
+    `https://api.microlink.io/?url=${encodeURIComponent(url)}&palette=false&audio=false&video=false&iframe=false`,
+    { signal: AbortSignal.timeout(12000) }
+  );
+  if (!res.ok) throw new Error(`microlink HTTP ${res.status}`);
+  const d = await res.json();
+  if (d.status !== 'success') throw new Error(d.message || 'microlink failed');
+  const data = d.data || {};
+  const title = data.title || '';
+  const description = data.description || '';
+  const imageUrl = data.image?.url || data.logo?.url || null;
+  if (!title) throw new Error('no title');
+  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl };
+}
+
+function parseOGP(html, pageUrl) {
+  const base = new URL(pageUrl).origin;
+  function meta(prop) {
+    const pats = [
+      new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, 'i'),
+      new RegExp(`<meta[^>]+name=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${prop}["']`, 'i'),
+    ];
+    for (const re of pats) {
+      const m = html.match(re);
+      if (m) return m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim();
+    }
+    return null;
+  }
+  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = meta('og:title') || meta('twitter:title') || (titleTag ? titleTag[1].trim() : '') || '';
+  const description = meta('og:description') || meta('twitter:description') || meta('description') || '';
+  let imageUrl = meta('og:image') || meta('twitter:image') || meta('twitter:image:src') || null;
+  if (imageUrl) {
+    if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
+    else if (imageUrl.startsWith('/')) imageUrl = base + imageUrl;
+  }
+  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl };
+}
+
+async function fetchViaProxy(url, proxyFn) {
+  const res = await fetch(proxyFn(url), { signal: AbortSignal.timeout(12000) });
+  if (!res.ok) throw new Error(`proxy HTTP ${res.status}`);
+  const ct = res.headers.get('content-type') || '';
+  let html = ct.includes('application/json')
+    ? (await res.json().then(j => j.contents || j.body || ''))
+    : await res.text();
+  if (!html || html.length < 100) throw new Error('empty response');
+  const info = parseOGP(html, url);
+  if (!info.title) throw new Error('no title found');
+  return info;
+}
+
+const PROXY_FNS = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+];
+
+async function fetchMeta(url) {
+  try { return await fetchViaMicrolink(url); } catch(e) {}
+  let lastErr;
+  for (const fn of PROXY_FNS) {
+    try { return await fetchViaProxy(url, fn); } catch(e) { lastErr = e; }
+  }
+  try {
+    const u = new URL(url);
+    return { title: u.hostname + u.pathname, description: '（自動取得に失敗しました。右上の✏️ボタンから手動で編集できます）', imageUrl: null };
+  } catch { throw lastErr; }
+}
+
+// ── 個別手動編集ロジック ──
+function editCard(id) {
+  const c = cards.find(item => item.id === id);
+  if (!c) return;
+
+  const currentTagsStr = (c.tags || []).join(', ');
+
+  const choice = prompt(
+    "どの項目を編集しますか？番号を入力してください：\n\n" +
+    "1 : タイトル\n" +
+    "2 : 説明文\n" +
+    "3 : サムネイル画像URL\n" +
+    "4 : タグ（複数設定はカンマ区切り）"
+  );
+
+  if (choice === null) return; 
+
+  if (choice === "1") {
+    const newTitle = prompt("新しいタイトルを入力してください:", c.title || "");
+    if (newTitle !== null) c.title = newTitle.trim() || "タイトルなし";
+  } else if (choice === "2") {
+    const newDesc = prompt("新しい説明文を入力してください:", c.description || "");
+    if (newDesc !== null) c.description = newDesc.trim();
+  } else if (choice === "3") {
+    const newImg = prompt("サムネイルの新しい画像URLを入力してください（非表示にする場合は空欄）:", c.imageUrl || "");
+    if (newImg !== null) c.imageUrl = newImg.trim() || null;
+  } else if (choice === "4") {
+    const newTagsStr = prompt("任意のタグを入力してください（複数ある場合はカンマ「,」で区切る）:\n例: 仕事, あとで読む, テクノロジー", currentTagsStr);
+    if (newTagsStr !== null) {
+      c.tags = newTagsStr.split(/[,，]/).map(t => t.trim()).filter(t => t.length > 0);
+    }
+  } else {
+    alert("1〜4の番号を入力してください。");
+    return;
+  }
+
+  saveCardToCloud(c);
+  if (currentFilterTag !== "すべて" && (!c.tags || !c.tags.includes(currentFilterTag))) {
+    currentFilterTag = "すべて";
+  }
+  renderAll();
+}
+
+// ── カード生成 ──
+function buildCard(c) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.id = `c-${c.id}`;
+  const favicon = getFavicon(c.url);
+  
+  let tagsHtml = '';
+  if (c.tags && c.tags.length > 0) {
+    tagsHtml = `<div class="card-tags">`;
+    c.tags.forEach(t => {
+      tagsHtml += `<span class="card-tag-item"># ${esc(t)}</span>`;
+    });
+    tagsHtml += `</div>`;
+  }
+
+  div.innerHTML = `
+    <div class="card-body">
+      <div class="card-title">${esc(c.title || 'タイトルなし')}</div>
+      <div class="card-desc">${esc(c.description || '')}</div>
+      ${tagsHtml}
+      <div class="card-url-row">
+        ${favicon ? `<img class="card-favicon" src="${esc(favicon)}" alt="" onerror="this.style.display='none'">` : ''}
+        <span class="card-url-text">${esc(c.url)}</span>
+      </div>
+    </div>
+    <div class="card-thumb-wrap" ${c.imageUrl ? '' : 'style="display:none"'}>
+      <div class="card-thumb">
+        ${c.imageUrl ? `<img src="${esc(c.imageUrl)}" alt="" loading="lazy" onerror="this.closest('.card-thumb-wrap').style.display='none'">` : ''}
+      </div>
+    </div>
+    <button class="card-action-btn card-del" title="削除">✕</button>
+    <button class="card-action-btn card-edit" title="編集">✏️</button>`;
+  
+  div.querySelector('.card-del').addEventListener('click', e => { e.stopPropagation(); removeCard(c.id); });
+  div.querySelector('.card-edit').addEventListener('click', e => { e.stopPropagation(); editCard(c.id); });
+  div.addEventListener('click', () => window.open(c.url, '_blank'));
+  return div;
+}
+
+function removeCard(id) {
+  cards = cards.filter(c => c.id !== id);
+  $(`c-${id}`)?.remove();
+  deleteCardFromCloud(id);
+  
+  if (currentFilterTag !== "すべて") {
+    const hasTag = cards.some(c => c.tags && c.tags.includes(currentFilterTag));
+    if (!hasTag) currentFilterTag = "すべて";
+  }
+  renderAll();
+}
+
+function renderAll() {
+  const grid = $('cardGrid');
+  grid.querySelectorAll('.card,.card-loading,.card-error').forEach(el => el.remove());
+  
+  const targetCards = currentFilterTag === "すべて" 
+    ? cards 
+    : cards.filter(c => c.tags && c.tags.includes(currentFilterTag));
+    
+  targetCards.forEach(c => grid.appendChild(buildCard(c)));
+  syncUI();
+}
+
+async function executeFetch(url, id, loaderEl) {
+  try {
+    const info = await fetchMeta(url);
+    const c = { id, url, title: info.title, description: info.description, imageUrl: info.imageUrl, tags: [], createdAt: id };
+    cards.unshift(c);
+    await saveCardToCloud(c);
+    
+    if (currentFilterTag !== "すべて") {
+      currentFilterTag = "すべて";
+      renderAll();
+    } else {
+      loaderEl.replaceWith(buildCard(c));
+      syncUI();
+    }
+  } catch(e) {
+    const errEl = document.createElement('div');
+    errEl.className = 'card-error'; errEl.id = `c-${id}`;
+    errEl.innerHTML = `
+      <span>取得失敗: ${esc(e.message)}</span>
+      <span style="flex:1"></span>
+      <button class="err-retry" style="background:var(--card-h);border:1px solid var(--border-h);color:var(--text-1);font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;margin-right:6px;font-family:inherit;white-space:nowrap">再取得</button>
+      <button class="err-del" style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:5px;font-family:inherit;">削除</button>`;
+    errEl.querySelector('.err-retry').addEventListener('click', () => {
+      const rl = document.createElement('div');
+      rl.className = 'card-loading'; rl.id = `c-${id}`;
+      rl.innerHTML = `<div class="spinner"></div><span>再取得中…</span>`;
+      errEl.replaceWith(rl);
+      executeFetch(url, id, rl).then(syncUI);
+    });
+    errEl.querySelector('.err-del').addEventListener('click', () => { errEl.remove(); syncUI(); });
+    loaderEl.replaceWith(errEl);
+    syncUI();
+  }
+}
+
+async function addURL() {
+  if (!currentUser) { alert("ログインが必要です"); return; }
+  let url = $('urlInput').value.trim();
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  try { new URL(url); } catch {
+    $('urlInput').classList.add('err');
+    setTimeout(() => $('urlInput').classList.remove('err'), 600);
+    return;
+  }
+  $('urlInput').value = '';
+  $('addBtn').disabled = true;
+  const id = Date.now().toString();
+  const grid = $('cardGrid');
+  const loader = document.createElement('div');
+  loader.className = 'card-loading'; loader.id = `c-${id}`;
+  loader.innerHTML = `<div class="spinner"></div><span>取得中: <span style="color:var(--text-4)">${esc(url)}</span></span>`;
+  
+  if (grid.firstChild) {
+    grid.insertBefore(loader, grid.firstChild);
+  } else {
+    grid.appendChild(loader);
+  }
+  
+  syncUI();
+  await executeFetch(url, id, loader);
+  $('addBtn').disabled = false;
+}
+
+// ☁️ ログインボタンの制御
+$('authBtn').addEventListener('click', async () => {
+  if (currentUser) {
+    if (confirm("ログアウトしますか？")) { signOut(auth); }
+  } else {
+    try { await signInWithPopup(auth, provider); } catch (e) { alert("ログインに失敗しました"); }
+  }
+});
+
+// ☁️ ログイン状態の検知・自動データ読込
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    $('authBtn').textContent = "ログアウト";
+    $('emptyState').innerHTML = `<div class="spinner"></div><div class="empty-label">データを同期中...</div>`;
+    
+    try {
+      const q = query(collection(db, "users", user.uid, "bookmarks"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+      cards = [];
+      querySnapshot.forEach((doc) => { cards.push(doc.data()); });
+    } catch (e) { console.error("Data load error:", e); }
+    
+    currentFilterTag = "すべて";
+    renderAll();
+  } else {
+    $('authBtn').textContent = "Googleログイン";
+    cards = [];
+    $('emptyState').innerHTML = `
+      <div class="empty-icon">🔒</div>
+      <div class="empty-label">Googleアカウントでログインしてください</div>
+      <div class="empty-hint">ログインするとクラウドに無料保存され、データが絶対に消えなくなります</div>`;
+    renderAll();
+  }
+});
+
+$('addBtn').addEventListener('click', addURL);
+$('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') addURL(); });
+$('urlInput').addEventListener('paste', e => {
+  setTimeout(() => { const v = $('urlInput').value.trim(); if (v.startsWith('http')) addURL(); }, 50);
+});
+</script>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-logo">LIKE_PAGE_LIST</div>
+    <div class="header-sub">URLをペーストしてブックマーク化</div>
+    <div class="header-spacer"></div>
+    <button id="authBtn" class="nav-btn" style="margin-right:8px;">接続中...</button>
+    <span id="countBadge" class="count-badge">0 件</span>
+  </header>
+  <main class="main">
+    <div class="topbar">
+      <input id="urlInput" class="url-input" type="url"
+      placeholder="ここにURLをペーストすると自動でブックマークカードを作成します"
+      autocomplete="off" spellcheck="false">
+      <button id="addBtn" class="add-btn">追加</button>
+    </div>
+    
+    <div id="tagBar" class="tag-bar"></div>
+    
+    <div class="content">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🔗</div>
+        <div class="empty-label">URLをペーストしてリストに追加</div>
+        <div class="empty-hint">自動取得に失敗しても、後から手動で個別に編集できます</div>
+      </div>
+      <div class="card-grid" id="cardGrid" style="display:none"></div>
+    </div>
+  </main>
+</div>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/like-page-list/service-worker.js');
+  }
+</script>
+</body>
+</html>
