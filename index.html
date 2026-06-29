@@ -301,48 +301,6 @@ async function fetchMeta(url) {
   } catch { throw lastErr; }
 }
 
-function editCard(id) {
-  const c = cards.find(item => item.id === id);
-  if (!c) return;
-
-  const currentTagsStr = (c.tags || []).join(', ');
-
-  const choice = prompt(
-    "どの項目を編集しますか？番号を入力してください：\n\n" +
-    "1 : タイトル\n" +
-    "2 : 説明文\n" +
-    "3 : サムネイル画像URL\n" +
-    "4 : タグ（複数設定はカンマ区切り）"
-  );
-
-  if (choice === null) return; 
-
-  if (choice === "1") {
-    const newTitle = prompt("新しいタイトルを入力してください:", c.title || "");
-    if (newTitle !== null) c.title = newTitle.trim() || "タイトルなし";
-  } else if (choice === "2") {
-    const newDesc = prompt("新しい説明文を入力してください:", c.description || "");
-    if (newDesc !== null) c.description = newDesc.trim();
-  } else if (choice === "3") {
-    const newImg = prompt("サムネイルの新しい画像URLを入力してください（非表示にする場合は空欄）:", c.imageUrl || "");
-    if (newImg !== null) c.imageUrl = newImg.trim() || null;
-  } else if (choice === "4") {
-    const newTagsStr = prompt("任意のタグを入力してください（複数ある場合はカンマ「,」で区切る）:\n例: 仕事, あとで読む, テクノロジー", currentTagsStr);
-    if (newTagsStr !== null) {
-      c.tags = newTagsStr.split(/[,，]/).map(t => t.trim()).filter(t => t.length > 0);
-    }
-  } else {
-    alert("1〜4の番号を入力してください。");
-    return;
-  }
-
-  saveCardToCloud(c);
-  if (currentFilterTag !== "すべて" && (!c.tags || !c.tags.includes(currentFilterTag))) {
-    currentFilterTag = "すべて";
-  }
-  renderAll();
-}
-
 function buildCard(c) {
   const div = document.createElement('div');
   div.className = 'card';
