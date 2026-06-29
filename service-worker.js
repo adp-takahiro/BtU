@@ -2,6 +2,8 @@ const CACHE_NAME = 'like-page-list-v1';
 const ASSETS = [
   '/BtU/',
   '/BtU/index.html',
+  '/BtU/style.css',
+  '/BtU/script.js',
   '/BtU/manifest.json',
   '/BtU/icon-192.png',
   '/BtU/icon-512.png',
