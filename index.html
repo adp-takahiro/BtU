@@ -88,8 +88,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 @media (max-width: 580px) {
   .header-sub { display: none; }
   .card { flex-direction: column; height:auto; }
-  .card-thumb-wrap { padding: 0 14px 14px; width: auto; max-height: 250px; }
-  .topbar { padding: 12px 14px 4px; }
+  .card-thumb-wrap { padding: 0; width: auto; }
+  .card-thumb-wrap .card-thumb { border-radius: 0; min-height: unset; aspect-ratio: 16 / 9; }
+  .card-thumb-wrap .card-thumb img { object-fit: contain; background: #111; }  .topbar { padding: 12px 14px 4px; }
   .content { padding: 14px 14px 60px; }
   .nav-btn { margin-right:0; }
   .card .card-action-btn { opacity: 1; background: rgba(0,0,0,1); width: 32px; height: 32px; font-size: 14px; }
