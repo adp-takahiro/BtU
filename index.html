@@ -237,19 +237,23 @@ allTags.forEach(tag => {
   renameBtn.textContent = '✎';
   renameBtn.title = 'タグ名を変更';
 
+  const deleteBtn = document.createElement('span');
+  deleteBtn.className = 'tag-rename-btn';
+  deleteBtn.textContent = '✕';
+  deleteBtn.title = 'タグを削除';
+
   btn.appendChild(label);
   btn.appendChild(renameBtn);
+  btn.appendChild(deleteBtn);
 
   btn.addEventListener('click', (e) => {
-    if (e.target === renameBtn) return;
+    if (e.target === renameBtn || e.target === deleteBtn) return;
     currentFilterTag = tag;
     renderAll();
   });
 
   renameBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-
-    // インライン入力に切り替え
     btn.innerHTML = '';
     const input = document.createElement('input');
     input.className = 'tag-rename-input';
@@ -261,8 +265,6 @@ allTags.forEach(tag => {
     const commit = async () => {
       const newTag = input.value.trim();
       if (!newTag || newTag === tag) { renderAll(); return; }
-
-      // 全カードの該当タグを一括置換
       const targets = cards.filter(c => c.tags && c.tags.includes(tag));
       for (const c of targets) {
         c.tags = c.tags.map(t => t === tag ? newTag : t);
@@ -279,9 +281,19 @@ allTags.forEach(tag => {
     });
   });
 
+  deleteBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const targets = cards.filter(c => c.tags && c.tags.includes(tag));
+    for (const c of targets) {
+      c.tags = c.tags.filter(t => t !== tag);
+      await saveCardToCloud(c);
+    }
+    if (currentFilterTag === tag) currentFilterTag = 'すべて';
+    renderAll();
+  });
+
   tagBar.appendChild(btn);
 });
-}
 
 async function fetchViaMicrolink(url) {
   const res = await fetch(
