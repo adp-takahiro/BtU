@@ -307,6 +307,39 @@ allTags.forEach(tag => {
 
   tagBar.appendChild(btn);
 });
+
+  // ドロップダウン（全タグ一覧）
+  const wrap = document.createElement('div');
+  wrap.className = 'tag-dropdown-wrap';
+
+  const dropBtn = document.createElement('button');
+  dropBtn.className = `tag-dropdown-btn ${currentFilterTag !== 'すべて' ? 'active' : ''}`;
+  dropBtn.textContent = `▾ 一覧`;
+  wrap.appendChild(dropBtn);
+
+  const menu = document.createElement('div');
+  menu.className = 'tag-dropdown-menu';
+
+  allTags.forEach(tag => {
+    const count = cards.filter(c => c.tags && c.tags.includes(tag)).length;
+    const item = document.createElement('div');
+    item.className = `tag-dropdown-item ${currentFilterTag === tag ? 'active' : ''}`;
+    item.innerHTML = `<span>${esc(tag)}</span><span class="tag-dropdown-count">${count}</span>`;
+    item.addEventListener('click', () => {
+      currentFilterTag = tag;
+      menu.classList.remove('open');
+      renderAll();
+    });
+    menu.appendChild(item);
+  });
+
+  wrap.appendChild(menu);
+  tagBar.appendChild(wrap);
+
+  dropBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
 }
 
 async function fetchViaMicrolink(url) {
@@ -675,6 +708,10 @@ function editCard(id) {
     renderAll();
   });
 }
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.tag-dropdown-menu').forEach(m => m.classList.remove('open'));
+});
   
 </script>
 </head>
