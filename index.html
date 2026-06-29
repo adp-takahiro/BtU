@@ -114,6 +114,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 .edit-cancel { padding: 5px 12px; background: none; border: 1px solid #3a3a3a; border-radius: 6px; color: #888; font-size: 12px; font-family: inherit; cursor: pointer; }
 .edit-cancel:hover { border-color: #888; color: #ccc; }
 .edit-label { font-size: 10px; color: #555; margin-bottom: 2px; }
+
+/* tag rename */
+.filter-tag-btn { display: flex; align-items: center; gap: 4px; }
+.tag-rename-btn { background: none; border: none; color: inherit; opacity: 0; font-size: 10px; cursor: pointer; padding: 0 0 0 2px; line-height: 1; transition: opacity 0.1s; }
+.filter-tag-btn:hover .tag-rename-btn { opacity: 0.6; }
+.tag-rename-btn:hover { opacity: 1 !important; }
+.tag-rename-input { font-size: 12px; font-family: inherit; background: #1a1a1a; border: 1px solid #3a7bd5; border-radius: 5px; color: #f0f0f0; padding: 2px 8px; outline: none; width: 100px; }
+
   
 </style>
 
@@ -216,17 +224,63 @@ function renderTagBar() {
   });
   tagBar.appendChild(allBtn);
 
-  allTags.forEach(tag => {
-    const count = cards.filter(c => c.tags && c.tags.includes(tag)).length;
-    const btn = document.createElement('button');
-    btn.className = `filter-tag-btn ${currentFilterTag === tag ? 'active' : ''}`;
-    btn.textContent = `${tag} (${count})`;
-    btn.addEventListener('click', () => {
-      currentFilterTag = tag;
-      renderAll();
-    });
-    tagBar.appendChild(btn);
+allTags.forEach(tag => {
+  const count = cards.filter(c => c.tags && c.tags.includes(tag)).length;
+  const btn = document.createElement('button');
+  btn.className = `filter-tag-btn ${currentFilterTag === tag ? 'active' : ''}`;
+
+  const label = document.createElement('span');
+  label.textContent = `${tag} (${count})`;
+
+  const renameBtn = document.createElement('span');
+  renameBtn.className = 'tag-rename-btn';
+  renameBtn.textContent = '✎';
+  renameBtn.title = 'タグ名を変更';
+
+  btn.appendChild(label);
+  btn.appendChild(renameBtn);
+
+  btn.addEventListener('click', (e) => {
+    if (e.target === renameBtn) return;
+    currentFilterTag = tag;
+    renderAll();
   });
+
+  renameBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+
+    // インライン入力に切り替え
+    btn.innerHTML = '';
+    const input = document.createElement('input');
+    input.className = 'tag-rename-input';
+    input.value = tag;
+    btn.appendChild(input);
+    input.focus();
+    input.select();
+
+    const commit = async () => {
+      const newTag = input.value.trim();
+      if (!newTag || newTag === tag) { renderAll(); return; }
+
+      // 全カードの該当タグを一括置換
+      const targets = cards.filter(c => c.tags && c.tags.includes(tag));
+      for (const c of targets) {
+        c.tags = c.tags.map(t => t === tag ? newTag : t);
+        await saveCardToCloud(c);
+      }
+      if (currentFilterTag === tag) currentFilterTag = newTag;
+      renderAll();
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { input.blur(); }
+      if (e.key === 'Escape') { renderAll(); }
+    });
+  });
+
+  tagBar.appendChild(btn);
+});
 }
 
 async function fetchViaMicrolink(url) {
