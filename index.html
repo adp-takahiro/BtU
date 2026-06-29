@@ -336,7 +336,10 @@ function buildCard(c) {
   
   div.querySelector('.card-del').addEventListener('click', e => { e.stopPropagation(); removeCard(c.id); });
   div.querySelector('.card-edit').addEventListener('click', e => { e.stopPropagation(); editCard(c.id); });
-  div.addEventListener('click', () => window.open(c.url, '_blank'));
+  div.addEventListener('click', () => {
+  if (div.classList.contains('editing')) return;
+  window.open(c.url, '_blank');
+  });
   return div;
 }
 
