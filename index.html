@@ -121,6 +121,11 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 .tag-rename-btn:hover { opacity: 1 !important; }
 .tag-rename-input { font-size: 12px; font-family: inherit; background: #1a1a1a; border: 1px solid #3a7bd5; border-radius: 5px; color: #f0f0f0; padding: 2px 8px; outline: none; width: 100px; }
 
+/* tag autocomplete */
+.tag-suggest { position: absolute; left: 0; right: 0; top: 100%; background: #1e1e1e; border: 1px solid #3a7bd5; border-top: none; border-radius: 0 0 6px 6px; z-index: 100; max-height: 160px; overflow-y: auto; }
+.tag-suggest-item { padding: 6px 10px; font-size: 12px; color: #ccc; cursor: pointer; }
+.tag-suggest-item:hover, .tag-suggest-item.active { background: #2a3a50; color: #fff; }
+.tag-input-wrap { position: relative; }
   
 </style>
 
@@ -560,7 +565,10 @@ function editCard(id) {
     <div class="edit-label">説明文</div>
     <textarea class="edit-field" id="ef-desc-${id}" rows="3" maxlength="200">${esc(c.description || '')}</textarea>
     <div class="edit-label">タグ（カンマ区切り）</div>
-    <input class="edit-field" id="ef-tags-${id}" type="text" value="${esc(currentTagsStr)}" placeholder="仕事, あとで読む">
+    <div class="tag-input-wrap">
+      <input class="edit-field" id="ef-tags-${id}" type="text" value="${esc(currentTagsStr)}" placeholder="仕事, あとで読む" autocomplete="off">
+      <div class="tag-suggest" id="ef-tags-suggest-${id}" style="display:none"></div>
+    </div>
     <div class="edit-label">サムネイル画像URL</div>
     <input class="edit-field" id="ef-img-${id}" type="url" value="${esc(c.imageUrl || '')}" placeholder="https://...">
     <div class="edit-actions">
@@ -568,7 +576,69 @@ function editCard(id) {
       <button class="edit-cancel" id="ef-cancel-${id}">キャンセル</button>
     </div>`;
 
-  // カードクリックでURLを開かないようにする
+  // タグサジェスト
+  const tagsInput = document.getElementById(`ef-tags-${id}`);
+  const suggestBox = document.getElementById(`ef-tags-suggest-${id}`);
+  let activeIdx = -1;
+  
+  tagsInput.addEventListener('input', () => {
+    const val = tagsInput.value;
+    const lastComma = Math.max(val.lastIndexOf(','), val.lastIndexOf('，'));
+    const current = val.slice(lastComma + 1).trim().toLowerCase();
+  
+    // 既存タグ一覧を収集
+    const allTags = [...new Set(cards.flatMap(c => c.tags || []))];
+    // すでに入力済みのタグを除外
+    const entered = val.split(/[,，]/).map(t => t.trim()).filter(Boolean);
+    const filtered = current
+      ? allTags.filter(t => t.toLowerCase().includes(current) && !entered.includes(t))
+      : [];
+  
+    activeIdx = -1;
+    if (filtered.length === 0) { suggestBox.style.display = 'none'; return; }
+  
+    suggestBox.innerHTML = filtered.map((t, i) =>
+      `<div class="tag-suggest-item" data-tag="${esc(t)}">${esc(t)}</div>`
+    ).join('');
+    suggestBox.style.display = 'block';
+  
+    suggestBox.querySelectorAll('.tag-suggest-item').forEach(item => {
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const val = tagsInput.value;
+        const lastComma = Math.max(val.lastIndexOf(','), val.lastIndexOf('，'));
+        const prefix = lastComma >= 0 ? val.slice(0, lastComma + 1) + ' ' : '';
+        tagsInput.value = prefix + item.dataset.tag + ', ';
+        suggestBox.style.display = 'none';
+        tagsInput.focus();
+      });
+    });
+  });
+  
+  tagsInput.addEventListener('keydown', (e) => {
+    const items = suggestBox.querySelectorAll('.tag-suggest-item');
+    if (!items.length || suggestBox.style.display === 'none') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIdx = (activeIdx + 1) % items.length;
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIdx = (activeIdx - 1 + items.length) % items.length;
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIdx));
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      items[activeIdx].dispatchEvent(new MouseEvent('mousedown'));
+    } else if (e.key === 'Escape') {
+      suggestBox.style.display = 'none';
+    }
+  });
+  
+  tagsInput.addEventListener('blur', () => {
+    setTimeout(() => { suggestBox.style.display = 'none'; }, 150);
+  });
+
+  
   div.onclick = null;
 
   document.getElementById(`ef-cancel-${id}`).addEventListener('click', (e) => {
