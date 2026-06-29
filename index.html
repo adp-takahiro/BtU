@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1a1a1a">
-<link rel="manifest" href="/BtU/manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>LIKE_PAGE_LIST</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,8 +57,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 .empty-icon { font-size: 36px; opacity: 0.25; }
 .empty-label { font-size: 14px; }
 .empty-hint { font-size: 12px; opacity: 0.5; }
-.card-grid { display: flex; flex-direction: column; gap: 12px; max-width: 900px; margin: 0 auto; width: 100%; }
-.card { display: flex; align-items: stretch; background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 130px; position: relative; cursor: pointer; transition: background 0.1s, border-color 0.1s; }
+.card-grid { display: flex; flex-direction: column; gap: 12px; max-width: 1000px; margin: 0 auto; width: 100%; }
+.card { display: flex; align-items: stretch; background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 200px; position: relative; cursor: pointer; transition: background 0.1s, border-color 0.1s; }
 .card:hover { background: var(--card-h); border-color: var(--border-h); }
 .card:hover .card-action-btn { opacity: 1; }
 .card-body { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-right: 45px; }
@@ -73,23 +71,21 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 .card-url-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .card-favicon { width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0; padding: 1.5px; background-color: white;}
 .card-url-text { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-thumb-wrap { width: 180px; flex-shrink: 0; padding: 14px 14px 14px 0; display: flex; }
+.card-thumb-wrap { width: 250px; flex-shrink: 0; padding: 14px 14px 14px 0; display: flex; }
 .card-thumb { flex: 1; background: var(--thumb-bg); border-radius: 7px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 90px; }
 .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* アクションボタン（PC用：ホバーしていない時は非表示） */
 .card-action-btn { position: absolute; right: 10px; width: 26px; height: 26px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: #aaa; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.15s, background 0.1s; z-index: 2; }
 .card-del { top: 10px; }
 .card-edit { top: 42px; }
 .card-del:hover { background: rgba(180,40,40,0.85); color: #fff; }
 .card-edit:hover { background: rgba(40,120,180,0.85); color: #fff; }
 
-.card-loading, .card-error { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-4); max-width: 900px; margin: 0 auto; width: 100%; }
+.card-loading, .card-error { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-4); max-width: 1000px; margin: 0 auto; width: 100%; }
 .card-error { color: #b06060; }
 .spinner { width: 15px; height: 15px; border: 2px solid var(--border-h); border-top-color: #aaa; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* 📱 スマホ・タブレット用（画面サイズが小さい時）の調整 */
 @media (max-width: 580px) {
   .header-sub { display: none; }
   .card { flex-direction: column; }
@@ -97,16 +93,28 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
   .topbar { padding: 12px 14px 4px; }
   .content { padding: 14px 14px 60px; }
   
-  /* 🛠️ スマホではボタンを常に表示(opacity: 1)にする */
   .card .card-action-btn { opacity: 1; background: rgba(0,0,0,0.75); width: 32px; height: 32px; font-size: 14px; }
   .card-del { top: 10px; right: 10px; }
-  .card-edit { top: 10px; right: 50px; } /* スマホ時は右上に2つ綺麗に並ぶよう位置を調整 */
-  .card-body { padding-right: 95px; }    /* ボタンとタイトルが被らないように余白を広げる */
+  .card-edit { top: 10px; right: 50px; }
+  .card-body { padding-right: 95px; }
 }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* edit mode */
+.card.editing { cursor: default; border-color: #3a7bd5; }
+.card.editing .card-body { gap: 8px; }
+.edit-field { width: 100%; background: #1a1a1a; border: 1px solid #3a7bd5; border-radius: 6px; color: #f0f0f0; font-size: 13px; font-family: inherit; padding: 6px 10px; resize: none; outline: none; box-sizing: border-box; }
+.edit-field:focus { border-color: #5a9bf5; }
+.edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+.edit-save { padding: 5px 16px; background: #3a7bd5; border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; }
+.edit-save:hover { background: #5a9bf5; }
+.edit-cancel { padding: 5px 12px; background: none; border: 1px solid #3a3a3a; border-radius: 6px; color: #888; font-size: 12px; font-family: inherit; cursor: pointer; }
+.edit-cancel:hover { border-color: #888; color: #ccc; }
+.edit-label { font-size: 10px; color: #555; margin-bottom: 2px; }
+  
 </style>
 
 <script type="module">
@@ -115,7 +123,6 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, collection, setDoc, deleteDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAh02dU50wou_idDi7caaL9OCQ42-SCAvk",
   authDomain: "like-url-list.firebaseapp.com",
@@ -147,8 +154,14 @@ function getFavicon(url) {
   try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`; }
   catch { return ''; }
 }
+function sanitizeImageUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'https:' || u.protocol === 'http:') ? url : null;
+  } catch { return null; }
+}
 
-// ☁️ Firebase クラウド保存・削除処理
 async function saveCardToCloud(c) {
   if (!currentUser) return;
   try {
@@ -216,7 +229,6 @@ function renderTagBar() {
   });
 }
 
-// ── OGP取得 ──
 async function fetchViaMicrolink(url) {
   const res = await fetch(
     `https://api.microlink.io/?url=${encodeURIComponent(url)}&palette=false&audio=false&video=false&iframe=false`,
@@ -230,7 +242,7 @@ async function fetchViaMicrolink(url) {
   const description = data.description || '';
   const imageUrl = data.image?.url || data.logo?.url || null;
   if (!title) throw new Error('no title');
-  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl };
+  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl: sanitizeImageUrl(imageUrl) };
 }
 
 function parseOGP(html, pageUrl) {
@@ -256,7 +268,7 @@ function parseOGP(html, pageUrl) {
     if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
     else if (imageUrl.startsWith('/')) imageUrl = base + imageUrl;
   }
-  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl };
+  return { title: title.slice(0,120), description: description.slice(0,200), imageUrl: sanitizeImageUrl(imageUrl) };
 }
 
 async function fetchViaProxy(url, proxyFn) {
@@ -289,7 +301,6 @@ async function fetchMeta(url) {
   } catch { throw lastErr; }
 }
 
-// ── 個別手動編集ロジック ──
 function editCard(id) {
   const c = cards.find(item => item.id === id);
   if (!c) return;
@@ -332,7 +343,6 @@ function editCard(id) {
   renderAll();
 }
 
-// ── カード生成 ──
 function buildCard(c) {
   const div = document.createElement('div');
   div.className = 'card';
@@ -460,7 +470,6 @@ async function addURL() {
   $('addBtn').disabled = false;
 }
 
-// ☁️ ログインボタンの制御
 $('authBtn').addEventListener('click', async () => {
   if (currentUser) {
     if (confirm("ログアウトしますか？")) { signOut(auth); }
@@ -469,7 +478,6 @@ $('authBtn').addEventListener('click', async () => {
   }
 });
 
-// ☁️ ログイン状態の検知・自動データ読込
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user) {
@@ -501,6 +509,56 @@ $('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') addURL()
 $('urlInput').addEventListener('paste', e => {
   setTimeout(() => { const v = $('urlInput').value.trim(); if (v.startsWith('http')) addURL(); }, 50);
 });
+
+// ── 個別手動編集ロジック ──
+function editCard(id) {
+  const c = cards.find(item => item.id === id);
+  if (!c) return;
+  const div = document.getElementById(`c-${id}`);
+  if (!div || div.classList.contains('editing')) return;
+
+  div.classList.add('editing');
+  div.querySelector('.card-action-btn.card-edit').style.display = 'none';
+  div.querySelector('.card-action-btn.card-del').style.display = 'none';
+
+  const body = div.querySelector('.card-body');
+  const currentTagsStr = (c.tags || []).join(', ');
+
+  body.innerHTML = `
+    <div class="edit-label">タイトル</div>
+    <input class="edit-field" id="ef-title-${id}" type="text" value="${esc(c.title || '')}" maxlength="120">
+    <div class="edit-label">説明文</div>
+    <textarea class="edit-field" id="ef-desc-${id}" rows="3" maxlength="200">${esc(c.description || '')}</textarea>
+    <div class="edit-label">タグ（カンマ区切り）</div>
+    <input class="edit-field" id="ef-tags-${id}" type="text" value="${esc(currentTagsStr)}" placeholder="仕事, あとで読む">
+    <div class="edit-label">サムネイル画像URL</div>
+    <input class="edit-field" id="ef-img-${id}" type="url" value="${esc(c.imageUrl || '')}" placeholder="https://...">
+    <div class="edit-actions">
+      <button class="edit-save" id="ef-save-${id}">保存</button>
+      <button class="edit-cancel" id="ef-cancel-${id}">キャンセル</button>
+    </div>`;
+
+  // カードクリックでURLを開かないようにする
+  div.onclick = null;
+
+  document.getElementById(`ef-cancel-${id}`).addEventListener('click', () => {
+    renderAll();
+  });
+
+  document.getElementById(`ef-save-${id}`).addEventListener('click', () => {
+    c.title       = document.getElementById(`ef-title-${id}`).value.trim() || 'タイトルなし';
+    c.description = document.getElementById(`ef-desc-${id}`).value.trim();
+    c.imageUrl    = sanitizeImageUrl(document.getElementById(`ef-img-${id}`).value.trim());
+    c.tags        = document.getElementById(`ef-tags-${id}`).value
+                      .split(/[,，]/).map(t => t.trim()).filter(t => t.length > 0);
+    saveCardToCloud(c);
+    if (currentFilterTag !== 'すべて' && (!c.tags || !c.tags.includes(currentFilterTag))) {
+      currentFilterTag = 'すべて';
+    }
+    renderAll();
+  });
+}
+  
 </script>
 </head>
 <body>
@@ -532,10 +590,5 @@ $('urlInput').addEventListener('paste', e => {
     </div>
   </main>
 </div>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/BtU/service-worker.js');
-  }
-</script>
 </body>
 </html>
