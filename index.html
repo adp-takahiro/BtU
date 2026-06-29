@@ -93,7 +93,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
   .card-thumb-wrap .card-thumb img { object-fit: cover; background: #111; }  .topbar { padding: 12px 14px 4px; }
   .content { padding: 14px 14px 60px; }
   .nav-btn { margin-right:0; }
-  .card .card-action-btn { opacity: 1; background: rgba(0,0,0,1); width: 32px; height: 32px; font-size: 14px; border: 1px solid var(--border); }
+  .card .card-action-btn { opacity: 1; background: rgba(0,0,0,1); width: 32px; height: 32px; font-size: 14px; }
   .card-del { top: 10px; right: 10px; }
   .card-edit { top: 10px; right: 50px; }
   .card-body { padding-right: 95px; }
@@ -307,39 +307,6 @@ allTags.forEach(tag => {
 
   tagBar.appendChild(btn);
 });
-
-  // ドロップダウン（全タグ一覧）
-  const wrap = document.createElement('div');
-  wrap.className = 'tag-dropdown-wrap';
-
-  const dropBtn = document.createElement('button');
-  dropBtn.className = `tag-dropdown-btn ${currentFilterTag !== 'すべて' ? 'active' : ''}`;
-  dropBtn.textContent = `▾ 一覧`;
-  wrap.appendChild(dropBtn);
-
-  const menu = document.createElement('div');
-  menu.className = 'tag-dropdown-menu';
-
-  allTags.forEach(tag => {
-    const count = cards.filter(c => c.tags && c.tags.includes(tag)).length;
-    const item = document.createElement('div');
-    item.className = `tag-dropdown-item ${currentFilterTag === tag ? 'active' : ''}`;
-    item.innerHTML = `<span>${esc(tag)}</span><span class="tag-dropdown-count">${count}</span>`;
-    item.addEventListener('click', () => {
-      currentFilterTag = tag;
-      menu.classList.remove('open');
-      renderAll();
-    });
-    menu.appendChild(item);
-  });
-
-  wrap.appendChild(menu);
-  tagBar.appendChild(wrap);
-
-  dropBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu.classList.toggle('open');
-  });
 }
 
 async function fetchViaMicrolink(url) {
@@ -708,10 +675,6 @@ function editCard(id) {
     renderAll();
   });
 }
-
-document.addEventListener('click', () => {
-  document.querySelectorAll('.tag-dropdown-menu').forEach(m => m.classList.remove('open'));
-});
   
 </script>
 </head>
