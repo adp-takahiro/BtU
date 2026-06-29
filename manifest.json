@@ -1,6 +1,6 @@
 {
-  "name": "LIKE_PAGE_LIST",
-  "short_name": "LikeList",
+  "name": "bookmark",
+  "short_name": "bookmark",
   "description": "URLをブックマーク化するアプリ",
   "id": "/BtU/",
   "start_url": "/BtU/",
