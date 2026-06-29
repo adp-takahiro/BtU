@@ -397,11 +397,11 @@ function buildCard(c) {
   return div;
 }
 
-function removeCard(id) {
+async function removeCard(id) {
   cards = cards.filter(c => c.id !== id);
   $(`c-${id}`)?.remove();
-  deleteCardFromCloud(id);
-  
+  await deleteCardFromCloud(id);
+
   if (currentFilterTag !== "すべて") {
     const hasTag = cards.some(c => c.tags && c.tags.includes(currentFilterTag));
     if (!hasTag) currentFilterTag = "すべて";
