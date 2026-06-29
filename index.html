@@ -499,11 +499,13 @@ function editCard(id) {
   // カードクリックでURLを開かないようにする
   div.onclick = null;
 
-  document.getElementById(`ef-cancel-${id}`).addEventListener('click', () => {
+  document.getElementById(`ef-cancel-${id}`).addEventListener('click', (e) => {
+    e.stopPropagation();
     renderAll();
   });
 
-  document.getElementById(`ef-save-${id}`).addEventListener('click', () => {
+  document.getElementById(`ef-save-${id}`).addEventListener('click', (e) => {
+    e.stopPropagation();
     c.title       = document.getElementById(`ef-title-${id}`).value.trim() || 'タイトルなし';
     c.description = document.getElementById(`ef-desc-${id}`).value.trim();
     c.imageUrl    = sanitizeImageUrl(document.getElementById(`ef-img-${id}`).value.trim());
