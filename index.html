@@ -212,12 +212,13 @@ function syncUI() {
 }
 
 function renderTagBar() {
-  const allTags = new Set();
+  const allTagsSet = new Set();
   cards.forEach(c => {
     if (c.tags && Array.isArray(c.tags)) {
-      c.tags.forEach(t => { if(t.trim()) allTags.add(t.trim()); });
+      c.tags.forEach(t => { if (t.trim()) allTagsSet.add(t.trim()); });
     }
   });
+  const allTags = [...allTagsSet].sort((a, b) => a.localeCompare(b, 'ja'));
 
   const tagBar = $('tagBar');
   tagBar.innerHTML = '';
