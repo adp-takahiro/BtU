@@ -82,14 +82,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text-1); font-fam
 
 /* PCレイアウト（850px以上）: 2列グリッド、カード内は縦組み（タイトル上→画像下）、画像高さ300px固定 */
 @media (min-width: 850px) {
-  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1400px; }
+  .card-grid#cardGrid { flex-direction: row; flex-wrap: wrap; gap: 16px; max-width: 1400px; }
+  .card-grid#cardGrid > .card,
+  .card-grid#cardGrid > .card-loading,
+  .card-grid#cardGrid > .card-error { width: calc(50% - 8px); margin: 0; }
   .card { flex-direction: column; height: auto; }
   .card-body { padding-right: 18px; }
   .card-action-btn { opacity: 0; width: 26px; height: 26px; font-size: 12px; }
   .card-thumb-wrap { width: auto; padding: 0; }
   .card-thumb { border-radius: 0; aspect-ratio: unset; height: 300px; min-height: unset; max-height: unset; }
   .card-thumb img { height: 300px; }
-  .card-loading, .card-error { max-width: 1400px; }
 }
 
 @media (max-width: 849px) {
