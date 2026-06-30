@@ -1,4 +1,4 @@
-const CACHE_NAME = 'like-page-list-v2';
+const CACHE_NAME = 'like-page-list-v3';
 const ASSETS = [
   '/BtU/',
   '/BtU/index.html',
