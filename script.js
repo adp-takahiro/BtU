@@ -554,6 +554,8 @@ function editCard(id) {
 
   document.getElementById(`ef-cancel-${id}`).addEventListener('click', (e) => {
     e.stopPropagation();
+    // 編集フォームのまま要素が残らないよう、明示的に削除してから再描画する
+    div.remove();
     renderAll();
   });
 
@@ -568,6 +570,8 @@ function editCard(id) {
     if (currentFilterTag !== 'すべて' && (!c.tags || !c.tags.includes(currentFilterTag))) {
       currentFilterTag = 'すべて';
     }
+    // 編集フォームのまま要素が残らないよう、明示的に削除してから再描画する
+    div.remove();
     renderAll();
   });
 }
