@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, collection, setDoc, deleteDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, collection, setDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAh02dU50wou_idDi7caaL9OCQ42-SCAvk",
@@ -142,10 +142,9 @@ function renderTagBar() {
         const newTag = input.value.trim();
         if (!newTag || newTag === tag) { renderAll(); return; }
         const targets = cards.filter(c => c.tags && c.tags.includes(tag));
-        for (const c of targets) {
-          c.tags = c.tags.map(t => t === tag ? newTag : t);
-          await saveCardToCloud(c);
-        }
+        // 問題6: 並列保存で高速化
+        targets.forEach(c => { c.tags = c.tags.map(t => t === tag ? newTag : t); });
+        await Promise.all(targets.map(c => saveCardToCloud(c)));
         if (currentFilterTag === tag) currentFilterTag = newTag;
         renderAll();
       };
@@ -159,11 +158,12 @@ function renderTagBar() {
 
     deleteBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
+      // 問題3: 誤操作防止のため確認ダイアログを表示
+      if (!confirm(`タグ「${tag}」をすべてのカードから削除しますか？`)) return;
       const targets = cards.filter(c => c.tags && c.tags.includes(tag));
-      for (const c of targets) {
-        c.tags = c.tags.filter(t => t !== tag);
-        await saveCardToCloud(c);
-      }
+      // 問題6: 並列保存
+      targets.forEach(c => { c.tags = c.tags.filter(t => t !== tag); });
+      await Promise.all(targets.map(c => saveCardToCloud(c)));
       if (currentFilterTag === tag) currentFilterTag = 'すべて';
       renderAll();
     });
@@ -188,25 +188,27 @@ async function fetchViaMicrolink(url) {
   return { title: title.slice(0, 120), description: description.slice(0, 200), imageUrl: sanitizeImageUrl(imageUrl) };
 }
 
+// 問題4: DOMParser を使った堅牢な OGP パース（正規表現の限界を回避）
 function parseOGP(html, pageUrl) {
   const base = new URL(pageUrl).origin;
-  function meta(prop) {
-    const pats = [
-      new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'),
-      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${prop}["']`, 'i'),
-      new RegExp(`<meta[^>]+name=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'),
-      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${prop}["']`, 'i'),
-    ];
-    for (const re of pats) {
-      const m = html.match(re);
-      if (m) return m[1].replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  function metaContent(...selectors) {
+    for (const sel of selectors) {
+      const el = doc.querySelector(sel);
+      if (el?.content) return el.content.trim();
     }
     return null;
   }
-  const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const title = meta('og:title') || meta('twitter:title') || (titleTag ? titleTag[1].trim() : '') || '';
-  const description = meta('og:description') || meta('twitter:description') || meta('description') || '';
-  let imageUrl = meta('og:image') || meta('twitter:image') || meta('twitter:image:src') || null;
+
+  const title =
+    metaContent('meta[property="og:title"]', 'meta[name="twitter:title"]') ||
+    doc.querySelector('title')?.textContent?.trim() || '';
+  const description =
+    metaContent('meta[property="og:description"]', 'meta[name="twitter:description"]', 'meta[name="description"]') || '';
+  let imageUrl =
+    metaContent('meta[property="og:image"]', 'meta[name="twitter:image"]', 'meta[name="twitter:image:src"]');
+
   if (imageUrl) {
     if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
     else if (imageUrl.startsWith('/')) imageUrl = base + imageUrl;
@@ -302,22 +304,54 @@ async function removeCard(id) {
   renderAll();
 }
 
+// 問題2: 差分更新 — 追加・削除・順序変更のみDOMを操作し、全再描画を回避
 function renderAll() {
   const grid = $('cardGrid');
-  grid.querySelectorAll('.card,.card-loading,.card-error').forEach(el => el.remove());
 
   const targetCards = currentFilterTag === "すべて"
     ? cards
     : cards.filter(c => c.tags && c.tags.includes(currentFilterTag));
 
-  targetCards.forEach(c => grid.appendChild(buildCard(c)));
+  // 現在グリッドにある card/loading/error の id → 要素 マップ
+  const existing = new Map();
+  grid.querySelectorAll('.card[id], .card-loading[id], .card-error[id]').forEach(el => {
+    existing.set(el.id, el);
+  });
+
+  const targetIds = new Set(targetCards.map(c => `c-${c.id}`));
+
+  // 不要な要素を削除
+  existing.forEach((el, id) => {
+    if (!targetIds.has(id)) {
+      el.classList.add('card-exit');
+      setTimeout(() => el.remove(), 200);
+    }
+  });
+
+  // 必要な要素を追加 or 順序を合わせる
+  targetCards.forEach((c, i) => {
+    const eid = `c-${c.id}`;
+    if (!existing.has(eid)) {
+      // 新規カードを正しい位置に挿入
+      const newEl = buildCard(c);
+      const refEl = grid.children[i] || null;
+      grid.insertBefore(newEl, refEl);
+    } else {
+      // 既存カードの位置を正しい順序に並べ直す
+      const el = existing.get(eid);
+      const refEl = grid.children[i] || null;
+      if (el !== refEl) grid.insertBefore(el, refEl);
+    }
+  });
+
   syncUI();
 }
 
 async function executeFetch(url, id, loaderEl) {
   try {
     const info = await fetchMeta(url);
-    const c = { id, url, title: info.title, description: info.description, imageUrl: info.imageUrl, tags: [], createdAt: id };
+    // 問題7: serverTimestamp() で正確な時刻管理
+    const c = { id, url, title: info.title, description: info.description, imageUrl: info.imageUrl, tags: [], createdAt: serverTimestamp() };
     cards.unshift(c);
     await saveCardToCloud(c);
 
@@ -374,8 +408,12 @@ async function addURL() {
   }
 
   syncUI();
-  await executeFetch(url, id, loader);
-  $('addBtn').disabled = false;
+  // 問題5: 例外が起きても必ずボタンを再有効化
+  try {
+    await executeFetch(url, id, loader);
+  } finally {
+    $('addBtn').disabled = false;
+  }
 }
 
 $('authBtn').addEventListener('click', async () => {
